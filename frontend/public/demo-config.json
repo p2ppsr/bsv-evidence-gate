@@ -1,0 +1,15 @@
+{
+  "network": "mainnet",
+  "uhrpUrl": "",
+  "uhrpHost": "nanostore.babbage.systems",
+  "explorerBaseUrl": "https://whatsonchain.com/tx/",
+  "transactions": {
+    "capture": "",
+    "storage": "",
+    "request": "",
+    "warrant": "",
+    "view": "",
+    "hold": "",
+    "expiry": ""
+  }
+}

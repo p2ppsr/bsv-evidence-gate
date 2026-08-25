@@ -1,0 +1,26 @@
+{
+  "name": "@p2ppsr/bsv-evidence-gate",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Court-authorized, retention-bound video evidence demo on BSV and UHRP",
+  "license": "Open BSV License",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "encrypt:evidence": "npm --prefix frontend run encrypt:evidence",
+    "test": "npm --prefix frontend test",
+    "build:frontend": "npm --prefix frontend run build",
+    "verify": "npm run encrypt:evidence && npm run test && npm run build:frontend",
+    "uhrp:estimate": "node scripts/publish-uhrp.mjs --estimate",
+    "uhrp:publish": "node scripts/publish-uhrp.mjs --publish --update-config",
+    "anchor:demo": "node scripts/anchor-demo.mjs",
+    "cars:build": "cars build Production",
+    "cars:deploy": "cars release now Production"
+  },
+  "dependencies": {
+    "@bsv/sdk": "^2.4.1"
+  },
+  "devDependencies": {
+    "@p2ppsr/cars-cli": "^1.2.32",
+    "@p2ppsr/lars": "^1.5.12"
+  }
+}
