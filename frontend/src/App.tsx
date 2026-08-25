@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { DEMO_EVIDENCE } from './demoEvidence.generated'
 import { loadDemoConfig, type DemoConfig, type EvidenceOutcome, type TransactionKey } from './config'
 import { decryptEvidence, sha256Hex, signWarrant, verifyWarrant, type SignedWarrant } from './demoCrypto'
@@ -10,7 +10,6 @@ import {
   ClockIcon,
   DatabaseIcon,
   ExternalIcon,
-  EyeIcon,
   FingerprintIcon,
   LockIcon,
   PlayIcon,
@@ -32,15 +31,15 @@ interface TimelineEvent {
 const INITIAL_EVENTS: TimelineEvent[] = [
   {
     key: 'capture',
-    title: 'Capture committed',
-    detail: 'Camera signature, plaintext hash, and seven-day policy anchored.',
+    title: 'Video captured',
+    detail: 'The camera signed the video fingerprint and seven-day rule.',
     time: '21:14:08Z',
     actor: 'CAM-12'
   },
   {
     key: 'storage',
-    title: 'Ciphertext published',
-    detail: 'AES-256-GCM object advertised through UHRP by content hash.',
+    title: 'Encrypted copy stored',
+    detail: 'The encrypted video was stored under its unique digital fingerprint.',
     time: '21:14:12Z',
     actor: 'Evidence service'
   }
@@ -64,32 +63,32 @@ const EVENT_BY_KEY: Record<Exclude<TransactionKey, 'capture' | 'storage'>, Timel
   view: {
     key: 'view',
     title: 'Authorized view',
-    detail: 'Credential verified, ciphertext hash matched, and footage decrypted in memory.',
+    detail: 'Court order, encrypted-file fingerprint, and video fingerprint all matched.',
     time: '21:19:31Z',
     actor: 'Prosecutor Park'
   },
   hold: {
     key: 'hold',
     title: 'Evidence hold applied',
-    detail: 'Retention state moved from ACTIVE to HELD before scheduled expiry.',
+    detail: 'A signed hold paused the seven-day clock before the video expired.',
     time: '21:20:02Z',
     actor: 'Prosecutor Park'
   },
   expiry: {
     key: 'expiry',
-    title: 'Access cryptographically expired',
-    detail: 'Official hosting retired and the governed decryption authority destroyed.',
+    title: 'Access expired',
+    detail: 'The official copy was removed and its unlocking key was destroyed.',
     time: '+7 days',
     actor: 'Retention service'
   }
 }
 
 const ROLE_META: Record<Role, { badge: string, description: string }> = {
-  Public: { badge: 'No credentials', description: 'Can verify the audit trail, never view footage.' },
+  Public: { badge: 'No credentials', description: 'Can verify the public record, but cannot view the footage.' },
   Officer: { badge: 'Agency identity', description: 'Can request access, but cannot self-authorize.' },
   Judge: { badge: 'Court authority', description: 'Can issue a signed, time-limited court order.' },
-  Prosecutor: { badge: 'Named grantee', description: 'Can decrypt only while the order is valid.' },
-  Auditor: { badge: 'Read-only proof', description: 'Can verify hashes and the spend-linked state history.' }
+  Prosecutor: { badge: 'Named person', description: 'Can open the video only while the order is valid.' },
+  Auditor: { badge: 'Read-only proof', description: 'Can check the video fingerprints and the full public history.' }
 }
 
 const shortHash = (value: string, head = 9, tail = 7) => value ? `${value.slice(0, head)}…${value.slice(-tail)}` : 'pending launch'
@@ -101,7 +100,7 @@ const ActionButton = ({ children, onClick, busy, variant = 'primary' }: {
   busy?: boolean
   variant?: 'primary' | 'secondary' | 'danger'
 }) => (
-  <button className={`action-button ${variant}`} onClick={onClick} disabled={busy}>
+  <button type="button" className={`action-button ${variant}`} onClick={onClick} disabled={busy}>
     {busy ? <span className="spinner" /> : null}
     <span>{children}</span>
     {!busy && variant === 'primary' ? <ArrowIcon /> : null}
@@ -125,7 +124,7 @@ const App = () => {
   const [warrant, setWarrant] = useState<SignedWarrant | null>(null)
   const [videoUrl, setVideoUrl] = useState<string>('')
   const [busy, setBusy] = useState(false)
-  const [notice, setNotice] = useState('Evidence is encrypted. No decryption authority has been granted.')
+  const [notice, setNotice] = useState('The video is locked. No court has granted access.')
   const [verifierOpen, setVerifierOpen] = useState(false)
   const [verifiedPlaintextHash, setVerifiedPlaintextHash] = useState('')
   const [verifiedCiphertextHash, setVerifiedCiphertextHash] = useState('')
@@ -133,16 +132,34 @@ const App = () => {
   const [ledgerError, setLedgerError] = useState('')
   const [ledgerChecking, setLedgerChecking] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     loadDemoConfig().then(setConfig).catch(() => setConfig(null))
-    return () => { if (videoUrl) URL.revokeObjectURL(videoUrl) }
   }, [])
+
+  useEffect(() => () => { if (videoUrl) URL.revokeObjectURL(videoUrl) }, [videoUrl])
+
+  useEffect(() => {
+    if (!verifierOpen) return
+    const priorOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setVerifierOpen(false)
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    window.setTimeout(() => closeButtonRef.current?.focus(), 0)
+    return () => {
+      document.body.style.overflow = priorOverflow
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [verifierOpen])
 
   useEffect(() => {
     if (!verifierOpen || !config) return
     let active = true
     setLedgerChecking(true)
+    setLedgerVerification(null)
     setLedgerError('')
     verifyGlobalEvidenceLedger(config)
       .then(result => { if (active) setLedgerVerification(result) })
@@ -160,7 +177,7 @@ const App = () => {
       const { StorageDownloader } = await import('@bsv/sdk')
       const downloader = new StorageDownloader({ networkPreset: config.network })
       const resolved = await downloader.download(config.uhrpUrl)
-      if (!resolved.data) throw new Error('The UHRP object could not be resolved')
+      if (!resolved.data) throw new Error('The encrypted video could not be retrieved')
       return Uint8Array.from(resolved.data).buffer
     }
     const response = await fetch(DEMO_EVIDENCE.localCiphertextUrl)
@@ -214,10 +231,10 @@ const App = () => {
       if (!(await verifyWarrant(warrant))) throw new Error('Court signature verification failed')
       const ciphertext = await fetchCiphertext()
       const ciphertextHash = await sha256Hex(ciphertext)
-      if (ciphertextHash !== DEMO_EVIDENCE.ciphertextSha256) throw new Error('Ciphertext hash does not match its evidence manifest')
+      if (ciphertextHash !== DEMO_EVIDENCE.ciphertextSha256) throw new Error('The stored file does not match its recorded fingerprint')
       const plaintext = await decryptEvidence(ciphertext, DEMO_EVIDENCE.keyBase64, DEMO_EVIDENCE.ivBase64)
       const plaintextHash = await sha256Hex(plaintext)
-      if (plaintextHash !== DEMO_EVIDENCE.plaintextSha256) throw new Error('Decrypted footage hash does not match its capture commitment')
+      if (plaintextHash !== DEMO_EVIDENCE.plaintextSha256) throw new Error('The opened video does not match the camera’s original fingerprint')
       if (videoUrl) URL.revokeObjectURL(videoUrl)
       const nextVideoUrl = URL.createObjectURL(new Blob([plaintext], { type: 'video/mp4' }))
       setVideoUrl(nextVideoUrl)
@@ -225,10 +242,10 @@ const App = () => {
       setVerifiedPlaintextHash(plaintextHash)
       addEvent('view')
       setState('open')
-      setNotice('Authorized. Both hashes match; decrypted bytes exist only in this browser session.')
+      setNotice('Authorized. Both digital fingerprints match; the unlocked video exists only in this browser session.')
       window.setTimeout(() => videoRef.current?.play().catch(() => {}), 120)
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : 'Unable to verify and decrypt evidence')
+      setNotice(error instanceof Error ? error.message : 'The video could not be checked and opened')
     } finally {
       setBusy(false)
     }
@@ -238,7 +255,7 @@ const App = () => {
     addEvent('hold')
     setState('held')
     setRole('Auditor')
-    setNotice('Evidence hold applied. The UHRP hosting commitment can now be renewed under the signed case authority.')
+    setNotice('Evidence hold applied. The video will stay available because the signed hold requires it.')
   }
 
   const expireEvidence = () => {
@@ -247,7 +264,7 @@ const App = () => {
     addEvent('expiry')
     setState('expired')
     setRole('Auditor')
-    setNotice('Companion no-hold record loaded. Its GlobalKVStore chain ends in EXPIRED; governed decryption authority is retired.')
+    setNotice('Seven days passed without a hold. The public record shows that access expired, and the official unlocking key is gone.')
   }
 
   const resetDemo = () => {
@@ -259,16 +276,16 @@ const App = () => {
     setWarrant(null)
     setVerifiedCiphertextHash('')
     setVerifiedPlaintextHash('')
-    setNotice('Evidence is encrypted. No decryption authority has been granted.')
+    setNotice('The video is locked. No court has granted access.')
   }
 
-  const nextAction = useMemo(() => {
+  const nextAction = (() => {
     if (state === 'sealed') return { label: 'Try access as an officer', action: attemptUnauthorizedAccess }
     if (state === 'denied') return { label: 'File a court access request', action: requestAccess }
     if (state === 'requested') return { label: 'Issue a signed court order', action: issueWarrant }
-    if (state === 'warranted') return { label: 'Verify order & decrypt footage', action: openEvidence }
+    if (state === 'warranted') return { label: 'Check order and open video', action: openEvidence }
     return null
-  }, [state, warrant, config])
+  })()
 
   const stateLabel: Record<DemoState, string> = {
     sealed: 'Encrypted · sealed',
@@ -277,7 +294,7 @@ const App = () => {
     warranted: 'Court-authorized',
     open: 'Verified session',
     held: 'Evidence hold',
-    expired: 'Cryptographically expired'
+    expired: 'Access expired'
   }
 
   const retentionPercent = state === 'expired' ? 100 : state === 'held' ? 38 : state === 'open' ? 76 : 24
@@ -295,25 +312,25 @@ const App = () => {
         <nav>
           <a href="#demo">Live scenario</a>
           <a href="#architecture">How it works</a>
-          <button className="text-button" onClick={() => setVerifierOpen(true)}>Public verifier</button>
+          <button type="button" className="text-button" onClick={() => setVerifierOpen(true)}>Verify the record</button>
         </nav>
-        <div className="network-pill"><span /> BSV {config?.network ?? 'mainnet'}</div>
+        <div className="network-pill"><span /> BSV live</div>
       </header>
 
       <main id="top">
         <section className="hero">
           <div className="hero-copy">
-            <div className="eyebrow"><span className="eyebrow-line" /> A civil-liberties architecture for public evidence</div>
+            <div className="eyebrow"><span className="eyebrow-line" /> Privacy-first public evidence</div>
             <h1>Safer evidence.<br /><em>Stronger rights.</em></h1>
-            <p className="hero-lede">Body-camera footage stays encrypted. Courts authorize narrow access. GlobalKVStore turns every lifecycle decision into controller-signed, independently verifiable BSV state.</p>
+            <p className="hero-lede">Body-camera footage stays locked. A court can grant narrow, time-limited access. Every decision leaves a signed public record on BSV that anyone can check.</p>
             <div className="hero-actions">
               <a className="action-button primary" href="#demo"><PlayIcon /><span>Run the 90-second demo</span><ArrowIcon /></a>
-              <button className="action-button secondary" onClick={() => setVerifierOpen(true)}><ChainIcon /><span>Inspect the proof</span></button>
+              <button type="button" className="action-button secondary" onClick={() => setVerifierOpen(true)}><ChainIcon /><span>See the public proof</span></button>
             </div>
             <div className="hero-proof">
-              <div><strong>AES-256</strong><span>encrypted before upload</span></div>
-              <div><strong>UHRP</strong><span>content-addressed storage</span></div>
-              <div><strong>BSV</strong><span>spend-linked evidence state</span></div>
+              <div><strong>Locked first</strong><span>encrypted before storage</span></div>
+              <div><strong>Court access</strong><span>named people, limited time</span></div>
+              <div><strong>Public proof</strong><span>every decision recorded on BSV</span></div>
             </div>
           </div>
           <div className="hero-visual" aria-label="Synthetic body camera evidence preview">
@@ -322,7 +339,7 @@ const App = () => {
             <div className="camera-meta"><span>CAM-12</span><span>2026-08-25 21:14:07Z</span></div>
             <div className="seal-card">
               <span className="seal-icon"><LockIcon /></span>
-              <div><strong>Sealed at capture</strong><span>Key unavailable without valid authority</span></div>
+              <div><strong>Sealed at capture</strong><span>Only a valid court order can open it</span></div>
               <span className="check"><CheckIcon /></span>
             </div>
             <div className="visual-glow" />
@@ -332,19 +349,19 @@ const App = () => {
         <section className="trust-strip">
           <span>One clip. Four institutions. Zero silent access.</span>
           <div className="trust-line" />
-          <span className="trust-status"><i /> Live cryptographic demonstration</span>
+          <span className="trust-status"><i /> Live, verifiable demonstration</span>
         </section>
 
         <section className="demo-section" id="demo">
           <div className="section-heading">
             <div><span className="section-number">01</span><span className="eyebrow">Guided scenario</span></div>
-            <h2>Can a legitimate investigation proceed<br />without building a surveillance free-for-all?</h2>
-            <p>Step through the same evidence as each participant. The cryptography is real; the identities and footage are fictional.</p>
+            <h2>Can an investigation use video evidence without giving everyone access?</h2>
+            <p>Step through one case as the officer, judge, prosecutor, and public auditor. The protection is real; the identities and footage are fictional.</p>
           </div>
 
           <div className="role-switcher" aria-label="Current demo role">
             {(Object.keys(ROLE_META) as Role[]).map(item => (
-              <button key={item} className={role === item ? 'active' : ''} onClick={() => setRole(item)}>
+              <button type="button" key={item} aria-pressed={role === item} className={role === item ? 'active' : ''} onClick={() => setRole(item)}>
                 <span>{item.slice(0, 1)}</span>{item}
               </button>
             ))}
@@ -368,10 +385,10 @@ const App = () => {
                 )}
                 <div className="video-overlay-top"><span><i /> REC</span><span>SYNTHETIC DEMO · NOT REAL EVIDENCE</span></div>
                 {!videoUrl && state !== 'expired' ? (
-                  <div className="locked-overlay"><LockIcon /><strong>Encrypted evidence</strong><span>A valid signed order is required to release the key</span></div>
+                  <div className="locked-overlay"><LockIcon /><strong>Encrypted evidence</strong><span>A valid signed order is required to open this video</span></div>
                 ) : null}
                 {state === 'expired' ? (
-                  <div className="locked-overlay expired-overlay"><ClockIcon /><strong>Access expired</strong><span>UHRP commitment retired · governed key destroyed</span></div>
+                  <div className="locked-overlay expired-overlay"><ClockIcon /><strong>Access expired</strong><span>Official copy retired · unlocking key destroyed</span></div>
                 ) : null}
               </div>
 
@@ -402,8 +419,8 @@ const App = () => {
 
             <aside className="ledger-panel">
               <div className="panel-header ledger-heading">
-                <div><span className="record-kicker">Independent record</span><h3>GlobalKVStore state chain</h3></div>
-                <span className="live-dot"><i /> LIVE</span>
+                <div><span className="record-kicker">Independent record</span><h3>Public BSV history</h3></div>
+                <span className="live-dot"><i /> ON BSV</span>
               </div>
               <div className="timeline">
                 {events.map((event, index) => {
@@ -422,79 +439,82 @@ const App = () => {
                 })}
               </div>
 
-              <button className="verify-button" onClick={() => setVerifierOpen(true)}>
+              <button type="button" className="verify-button" onClick={() => setVerifierOpen(true)}>
                 <FingerprintIcon />
-                <span><strong>Verify this record yourself</strong><small>Resolve the live overlay, signatures, and UTXO ancestry</small></span>
+                <span><strong>Verify this record yourself</strong><small>Check the signatures and complete history directly from BSV</small></span>
                 <ArrowIcon />
               </button>
             </aside>
           </div>
         </section>
 
-        <section className="retention-section">
-          <div className="retention-copy">
-            <span className="section-number">02</span>
-            <span className="eyebrow">Retention without trust</span>
-            <h2>Seven days means<br /><em>seven days.</em></h2>
-            <p>The policy is committed at capture. Before expiry, an authorized evidence hold can renew availability. Without one, official UHRP hosting retires and decryption authority is destroyed. The demo publishes one independent record for each outcome, never two competing spends of one state.</p>
-            <div className="honesty-note"><ShieldIcon /><span><strong>An honest security boundary.</strong> Blockchain proves the governed system’s actions. Key destruction makes retained ciphertext unusable; no network can prove a rogue third party kept no copy.</span></div>
-          </div>
-          <div className="retention-card">
-            <div className="retention-top"><span>DEMO RETENTION CLOCK</span><strong>{state === 'expired' ? 'EXPIRED' : state === 'held' ? 'ON HOLD' : '6d 23h 42m'}</strong></div>
-            <div className="retention-track"><span style={{ width: `${retentionPercent}%` }} /></div>
-            <div className="retention-labels"><span>CAPTURED</span><span>7-DAY DEADLINE</span></div>
-            <div className="policy-paths">
-              <div className={state === 'held' ? 'selected' : ''}><span className="path-icon hold"><ScaleIcon /></span><div><strong>Legal hold arrives</strong><p>Signed authority spends the active evidence state into a renewed HELD state.</p></div><CheckIcon /></div>
-              <div className={state === 'expired' ? 'selected expired' : ''}><span className="path-icon expire"><ClockIcon /></span><div><strong>No hold arrives</strong><p>Hosting expires, key authority is retired, and the companion record advances to EXPIRED.</p></div><CheckIcon /></div>
+        <section className="retention-shell">
+          <div className="retention-section">
+            <div className="retention-copy">
+              <span className="section-number">02</span>
+              <span className="eyebrow">Automatic limits</span>
+              <h2>Seven days means<br /><em>seven days.</em></h2>
+              <p>The seven-day rule is recorded when the camera captures the video. A valid legal hold keeps it available. Without one, the official copy is retired and its access key is destroyed.</p>
+              <div className="honesty-note"><ShieldIcon /><span><strong>An honest limit.</strong> The public record proves what the official system did. No technology can prove that a rogue third party never made a separate copy.</span></div>
+            </div>
+            <div className="retention-card">
+              <div className="retention-top"><span>DEMO SEVEN-DAY CLOCK</span><strong>{state === 'expired' ? 'EXPIRED' : state === 'held' ? 'ON HOLD' : '6d 23h 42m'}</strong></div>
+              <div className="retention-track"><span style={{ width: `${retentionPercent}%` }} /></div>
+              <div className="retention-labels"><span>CAPTURED</span><span>7-DAY DEADLINE</span></div>
+              <div className="policy-paths">
+                <div className={state === 'held' ? 'selected' : ''}><span className="path-icon hold"><ScaleIcon /></span><div><strong>Legal hold arrives</strong><p>The signed order keeps the official video available for the case.</p></div><CheckIcon /></div>
+                <div className={state === 'expired' ? 'selected expired' : ''}><span className="path-icon expire"><ClockIcon /></span><div><strong>No hold arrives</strong><p>The official copy is retired and the key needed to open it is destroyed.</p></div><CheckIcon /></div>
+              </div>
             </div>
           </div>
         </section>
 
         <section className="architecture-section" id="architecture">
           <div className="section-heading compact-heading">
-            <div><span className="section-number">03</span><span className="eyebrow">The architecture</span></div>
-            <h2>Store the footage. Prove the rules.</h2>
-            <p>Each layer does one job, so privacy does not depend on a database administrator’s promises.</p>
+            <div><span className="section-number">03</span><span className="eyebrow">How it works</span></div>
+            <h2>Protect the video. Prove every decision.</h2>
+            <p>Three simple safeguards keep access narrow and make silent changes visible.</p>
           </div>
           <div className="architecture-grid">
-            <div className="architecture-card"><span><LockIcon /></span><small>01 · AT CAPTURE</small><h3>Encrypt first</h3><p>A unique AES-256-GCM key seals each recording before any storage host receives it.</p><code>{shortHash(DEMO_EVIDENCE.plaintextSha256, 12, 8)}</code></div>
+            <div className="architecture-card"><span><LockIcon /></span><small>01 · AT CAPTURE</small><h3>Lock it immediately</h3><p>Each recording is encrypted before a storage provider ever receives it.</p><code>Video fingerprint · {shortHash(DEMO_EVIDENCE.plaintextSha256, 10, 6)}</code></div>
             <div className="architecture-connector"><ArrowIcon /></div>
-            <div className="architecture-card"><span><DatabaseIcon /></span><small>02 · UHRP</small><h3>Store by hash</h3><p>Only ciphertext is published. Content addressing detects modification and enables resilient resolution.</p><code>{shortHash(DEMO_EVIDENCE.ciphertextSha256, 12, 8)}</code></div>
+            <div className="architecture-card"><span><DatabaseIcon /></span><small>02 · ENCRYPTED STORAGE</small><h3>Detect any change</h3><p>The encrypted file has a unique fingerprint, so even a one-byte change is obvious.</p><code>Encrypted-file fingerprint · {shortHash(DEMO_EVIDENCE.ciphertextSha256, 10, 6)}</code></div>
             <div className="architecture-connector"><ArrowIcon /></div>
-            <div className="architecture-card"><span><ChainIcon /></span><small>03 · GLOBAL KV</small><h3>Spend state forward</h3><p>Each controller-signed PushDrop token spends its predecessor, while the overlay retains the verifiable history.</p><code>{events.length} lifecycle states</code></div>
+            <div className="architecture-card"><span><ChainIcon /></span><small>03 · PUBLIC BSV RECORD</small><h3>Make decisions visible</h3><p>Every signed update replaces the prior state while preserving a history anyone can verify.</p><code>{events.length} verified steps in this session</code></div>
           </div>
         </section>
 
         <section className="closing-section">
           <div><span className="eyebrow">Built as a response to a real question</span><h2>Useful evidence systems<br />do not require silent surveillance.</h2></div>
-          <button className="action-button light" onClick={resetDemo}><PlayIcon /><span>Run the demo again</span><ArrowIcon /></button>
+          <button type="button" className="action-button light" onClick={resetDemo}><PlayIcon /><span>Run the demo again</span><ArrowIcon /></button>
         </section>
       </main>
 
       <footer>
         <div className="brand footer-brand"><span className="brand-mark"><ShieldIcon /></span><span><strong>BSV</strong> Evidence Gate</span></div>
         <p>Open proof-of-concept · Fictional identities · Synthetic footage · Not a production evidence system</p>
-        <div><a href="https://github.com/p2ppsr/bsv-evidence-gate" target="_blank" rel="noreferrer">Source <ExternalIcon /></a><a href="https://bsv.brc.dev/overlays/0026" target="_blank" rel="noreferrer">UHRP standard <ExternalIcon /></a></div>
+        <div><a href="https://github.com/p2ppsr/bsv-evidence-gate" target="_blank" rel="noreferrer">Source <ExternalIcon /></a><a href="https://bsv.brc.dev/overlays/0026" target="_blank" rel="noreferrer">Technical standard <ExternalIcon /></a></div>
       </footer>
 
       {verifierOpen ? (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setVerifierOpen(false)}>
           <section className="verifier-modal" role="dialog" aria-modal="true" aria-labelledby="verifier-title" onMouseDown={event => event.stopPropagation()}>
-            <button className="modal-close" onClick={() => setVerifierOpen(false)} aria-label="Close verifier">×</button>
+            <button ref={closeButtonRef} type="button" className="modal-close" onClick={() => setVerifierOpen(false)} aria-label="Close verifier">×</button>
             <span className="verifier-mark"><FingerprintIcon /></span>
-            <span className="eyebrow">Public verifier</span>
-            <h2 id="verifier-title">Trust the bytes, not the interface.</h2>
-            <p>This browser queries the public GlobalKVStore overlay, reconstructs both UTXO histories, checks every allowed transition, pins the controller, and verifies each current PushDrop signature.</p>
+            <span className="eyebrow">Independent check</span>
+            <h2 id="verifier-title">See the proof for yourself.</h2>
+            <p>Your browser checks the public BSV record directly. It confirms who signed it, whether every step follows the rules, and whether anything was silently replaced.</p>
             <div className="verification-list">
-              <div><span className={ledgerVerification ? '' : 'muted'}>{ledgerVerification ? <CheckIcon /> : <ClockIcon />}</span><section><small>GLOBALKVSTORE · LIVE OVERLAY</small><code>{ledgerChecking ? 'Resolving ls_kvstore…' : ledgerVerification ? `${ledgerVerification.records.held.historyLength} held states + ${ledgerVerification.records.expired.historyLength} expired states` : 'Awaiting live verification'}</code><p>{ledgerVerification ? `Verified controller ${shortHash(ledgerVerification.controller, 18, 12)} at ${new Date(ledgerVerification.checkedAt).toLocaleTimeString()}.` : ledgerError || 'The check runs directly from this browser when the verifier opens.'}</p></section></div>
-              <div><span><CheckIcon /></span><section><small>CAPTURE COMMITMENT · SHA-256</small><code>{DEMO_EVIDENCE.plaintextSha256}</code><p>{verifiedPlaintextHash ? 'Recomputed from the decrypted video in this browser — match.' : 'Committed before encryption; recomputed whenever authorized footage opens.'}</p></section></div>
-              <div><span><CheckIcon /></span><section><small>UHRP CIPHERTEXT · SHA-256</small><code>{DEMO_EVIDENCE.ciphertextSha256}</code><p>{verifiedCiphertextHash ? 'Recomputed from the resolved ciphertext in this browser — match.' : `${fileSize(DEMO_EVIDENCE.ciphertextBytes)} encrypted object · ${config?.uhrpHost ?? 'UHRP host'}`}</p></section></div>
-              <div><span className={warrant ? '' : 'muted'}>{warrant ? <CheckIcon /> : <ClockIcon />}</span><section><small>COURT CREDENTIAL</small><code>{warrant ? shortHash(warrant.signatureBase64, 18, 12) : 'Run the guided scenario to issue'}</code><p>{warrant ? `${warrant.algorithm} signature issued to ${warrant.payload.grantee}.` : 'No order exists in this browser session yet.'}</p></section></div>
+              <div><span className={ledgerVerification ? '' : 'muted'}>{ledgerVerification ? <CheckIcon /> : <ClockIcon />}</span><section><small>PUBLIC BSV RECORD</small><code>{ledgerChecking ? 'Checking the live record…' : ledgerVerification ? `${ledgerVerification.records.held.historyLength}-step hold record · ${ledgerVerification.records.expired.historyLength}-step expiry record` : 'Waiting to verify'}</code><p>{ledgerVerification ? `Record owner and both histories verified at ${new Date(ledgerVerification.checkedAt).toLocaleTimeString()}.` : ledgerError || 'This check runs directly in your browser.'}</p></section></div>
+              <div><span><CheckIcon /></span><section><small>ORIGINAL VIDEO FINGERPRINT</small><code>{DEMO_EVIDENCE.plaintextSha256}</code><p>{verifiedPlaintextHash ? 'Checked against the opened video. It is an exact match.' : 'Recorded when the camera captured the video and checked again whenever it opens.'}</p></section></div>
+              <div><span><CheckIcon /></span><section><small>ENCRYPTED FILE FINGERPRINT</small><code>{DEMO_EVIDENCE.ciphertextSha256}</code><p>{verifiedCiphertextHash ? 'Checked against the stored encrypted file. It is an exact match.' : `${fileSize(DEMO_EVIDENCE.ciphertextBytes)} encrypted file stored separately from the public record.`}</p></section></div>
+              <div><span className={warrant ? '' : 'muted'}>{warrant ? <CheckIcon /> : <ClockIcon />}</span><section><small>COURT ORDER SIGNATURE</small><code>{warrant ? shortHash(warrant.signatureBase64, 18, 12) : 'Run the guided scenario to create one'}</code><p>{warrant ? `Signed for ${warrant.payload.grantee} and limited to this browser session.` : 'No court order has been issued in this session.'}</p></section></div>
             </div>
+            <div className="transaction-heading"><strong>Step-by-step public record</strong><span>Open any BSV transaction</span></div>
             <div className="transaction-grid">
               {(activeRecord?.history ?? []).map(item => <div key={item.outpoint}><span>{item.value.sequence + 1}. {item.value.state.replaceAll('_', ' ')}</span><TxLink txid={item.txid} config={config} /></div>)}
             </div>
-            <button className="action-button primary modal-action" onClick={() => setVerifierOpen(false)}><CheckIcon /><span>Verification complete</span></button>
+            <button type="button" className="action-button primary modal-action" onClick={() => setVerifierOpen(false)}><CheckIcon /><span>Done</span></button>
           </section>
         </div>
       ) : null}

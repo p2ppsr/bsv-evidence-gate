@@ -61,12 +61,12 @@ const verifyCurrentTokenSignature = async (
   const decoded = PushDrop.decode(transaction.outputs[outputIndex].lockingScript)
   const fields = decoded.fields.slice()
   const signature = fields.pop()
-  if (!signature || fields.length < 4) throw new Error('Malformed GlobalKVStore token')
+  if (!signature || fields.length < 4) throw new Error('The public record is incomplete')
   const protocolID = JSON.parse(Utils.toUTF8(fields[0])) as [1 | 2, string]
   const key = Utils.toUTF8(fields[1])
   const controller = Utils.toHex(fields[3])
   if (JSON.stringify(protocolID) !== JSON.stringify(proof.protocolID)) throw new Error('Protocol ID mismatch')
-  if (key !== record.key) throw new Error('GlobalKVStore key mismatch')
+  if (key !== record.key) throw new Error('The public record points to the wrong case')
   if (controller !== proof.controller) throw new Error('Controller identity mismatch')
   const { valid } = await new ProtoWallet('anyone').verifySignature({
     data: fields.flat(),
@@ -75,7 +75,7 @@ const verifyCurrentTokenSignature = async (
     protocolID,
     keyID: key
   })
-  if (!valid) throw new Error('Invalid PushDrop controller signature')
+  if (!valid) throw new Error('The public record has an invalid signature')
   return transaction.id('hex')
 }
 
@@ -88,7 +88,7 @@ const verifyRecord = async (
     { key: record.key, controller: proof.controller },
     { history: true, includeToken: true }
   )
-  if (!entry || Array.isArray(entry) || !entry.token) throw new Error(`${record.evidenceId} was not found on the overlay`)
+  if (!entry || Array.isArray(entry) || !entry.token) throw new Error(`${record.evidenceId} was not found in the public record`)
   if (entry.controller !== proof.controller) throw new Error('Overlay returned an unexpected controller')
   const history = (entry.history ?? []).map(parseValue)
   validateStateHistory(record, history)
@@ -116,7 +116,7 @@ const verifyRecord = async (
 export const verifyGlobalEvidenceLedger = async (config: DemoConfig): Promise<LedgerVerification> => {
   const proof = config.stateProof
   if (!proof.controller || !proof.records.held.currentOutpoint || !proof.records.expired.currentOutpoint) {
-    throw new Error('GlobalKVStore state chains have not been published yet')
+    throw new Error('The public BSV history has not been published yet')
   }
   const store = new GlobalKVStore({
     protocolID: proof.protocolID,
