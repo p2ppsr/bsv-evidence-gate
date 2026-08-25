@@ -36,9 +36,10 @@ const { authenticated } = await wallet.isAuthenticated({})
 const { network } = await wallet.getNetwork({})
 if (!authenticated || network !== 'mainnet') throw new Error('An authenticated mainnet BRC-100 wallet is required.')
 
-const results = {}
+const results = { ...config.transactions }
 let outputSatoshis = 0
 for (const [event, detail] of Object.entries(scenario)) {
+  if (results[event]) continue
   const payload = JSON.stringify({ p: 'BSVEG/1', evidence: 'EV-2026-1042', event, detail })
   const payloadHex = Utils.toHex(Utils.toArray(payload, 'utf8'))
   const lockingScript = LockingScript.fromASM(`OP_FALSE OP_RETURN ${payloadHex}`).toHex()
@@ -48,12 +49,12 @@ for (const [event, detail] of Object.entries(scenario)) {
     description: `Anchor evidence ${event}`,
     labels: ['bsv-evidence-gate', `evidence-${event}`],
     outputs: [{ lockingScript, satoshis: 1, outputDescription: `Evidence ${event} marker` }],
-    options: { acceptDelayedBroadcast: false, randomizeOutputs: false, returnTXIDOnly: true }
+    options: { randomizeOutputs: false }
   })
   if (!result.txid) throw new Error(`Wallet returned no TXID for ${event}.`)
   results[event] = result.txid
+  config.transactions = results
+  await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`)
 }
 
-config.transactions = results
-await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`)
 console.log(JSON.stringify({ protocol: 'BSVEG/1', transactions: results, outputSatoshis }, null, 2))

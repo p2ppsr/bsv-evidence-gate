@@ -38,9 +38,9 @@ const result = await uploader.publishFile({
   file: { data, type: 'application/octet-stream' },
   retentionPeriod: retentionMinutes
 })
-const downloaded = await new StorageDownloader({ networkPreset: 'mainnet' }).download(result.uhrpURL)
-if (!downloaded.data || downloaded.data.length !== data.length) {
-  throw new Error('UHRP round-trip validation returned the wrong byte length.')
+const hostedRecord = await uploader.findFile(result.uhrpURL, { hostedBy: result.hostedBy })
+if (Number.parseInt(hostedRecord.size, 10) !== data.length) {
+  throw new Error('The publishing provider returned the wrong byte length.')
 }
 
 if (shouldUpdateConfig) {
@@ -50,4 +50,12 @@ if (shouldUpdateConfig) {
   await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`)
 }
 
-console.log(JSON.stringify({ result, roundTripBytes: downloaded.data.length, configUpdated: shouldUpdateConfig }, null, 2))
+let globalRoundTripBytes = null
+try {
+  const downloaded = await new StorageDownloader({ networkPreset: 'mainnet' }).download(result.uhrpURL)
+  globalRoundTripBytes = downloaded.data?.length ?? null
+} catch {
+  // A fresh advertisement can take a short time to reach the global resolver.
+}
+
+console.log(JSON.stringify({ result, hostedRecord, globalRoundTripBytes, configUpdated: shouldUpdateConfig }, null, 2))

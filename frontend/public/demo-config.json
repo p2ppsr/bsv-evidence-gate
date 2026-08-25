@@ -1,15 +1,15 @@
 {
   "network": "mainnet",
-  "uhrpUrl": "",
-  "uhrpHost": "nanostore.babbage.systems",
+  "uhrpUrl": "XUToyhHVCKaERRmHFzndwL1hBKXWTATjbi4zCjVs6mv22X5Sjk5B",
+  "uhrpHost": "https://nanostore.babbage.systems",
   "explorerBaseUrl": "https://whatsonchain.com/tx/",
   "transactions": {
-    "capture": "",
-    "storage": "",
-    "request": "",
-    "warrant": "",
-    "view": "",
-    "hold": "",
-    "expiry": ""
+    "capture": "ab70d9ba04ffcac39b55ae02233e089245e7869c53c48a1acf3248d2a5ae4d49",
+    "storage": "cbd7405ac0f56588cbad8071b744a1dfcf324d435a5393e8eed1963316d1b487",
+    "request": "7450883840899be28efa2cabaf2e20fd64f689a342c704c51e59206269f6a680",
+    "warrant": "8dc42e48cd8cf7acca61d361e9db1589578300fac027987cd0146eaf397b71b1",
+    "view": "72f92017ffc8302bb4df6b277da2760f45ec14eda93e10512003083f2448a04d",
+    "hold": "81d7a2655c16b44120615fcbf9cd978be2ab392230693e32f7e0370352fb1935",
+    "expiry": "488faabd200dad6cd3581f6af1dca6821fb642f298ebb682181ee08abd0a4261"
   }
 }
