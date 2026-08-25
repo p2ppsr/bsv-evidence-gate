@@ -314,7 +314,6 @@ const App = () => {
           <a href="#architecture">How it works</a>
           <button type="button" className="text-button" onClick={() => setVerifierOpen(true)}>Verify the record</button>
         </nav>
-        <div className="network-pill"><span /> BSV live</div>
       </header>
 
       <main id="top">
@@ -349,7 +348,7 @@ const App = () => {
         <section className="trust-strip">
           <span>One clip. Four institutions. Zero silent access.</span>
           <div className="trust-line" />
-          <span className="trust-status"><i /> Live, verifiable demonstration</span>
+          <span className="trust-status">Proof runs in your browser</span>
         </section>
 
         <section className="demo-section" id="demo">
