@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { DEMO_EVIDENCE } from './demoEvidence.generated'
-import { loadDemoConfig, type DemoConfig, type TransactionKey } from './config'
+import { loadDemoConfig, type DemoConfig, type EvidenceOutcome, type TransactionKey } from './config'
 import { decryptEvidence, sha256Hex, signWarrant, verifyWarrant, type SignedWarrant } from './demoCrypto'
+import { verifyGlobalEvidenceLedger, type LedgerVerification } from './evidenceLedger'
 import {
   ArrowIcon,
   ChainIcon,
@@ -88,7 +89,7 @@ const ROLE_META: Record<Role, { badge: string, description: string }> = {
   Officer: { badge: 'Agency identity', description: 'Can request access, but cannot self-authorize.' },
   Judge: { badge: 'Court authority', description: 'Can issue a signed, time-limited court order.' },
   Prosecutor: { badge: 'Named grantee', description: 'Can decrypt only while the order is valid.' },
-  Auditor: { badge: 'Read-only proof', description: 'Can verify hashes and lifecycle transactions.' }
+  Auditor: { badge: 'Read-only proof', description: 'Can verify hashes and the spend-linked state history.' }
 }
 
 const shortHash = (value: string, head = 9, tail = 7) => value ? `${value.slice(0, head)}…${value.slice(-tail)}` : 'pending launch'
@@ -128,12 +129,27 @@ const App = () => {
   const [verifierOpen, setVerifierOpen] = useState(false)
   const [verifiedPlaintextHash, setVerifiedPlaintextHash] = useState('')
   const [verifiedCiphertextHash, setVerifiedCiphertextHash] = useState('')
+  const [ledgerVerification, setLedgerVerification] = useState<LedgerVerification | null>(null)
+  const [ledgerError, setLedgerError] = useState('')
+  const [ledgerChecking, setLedgerChecking] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     loadDemoConfig().then(setConfig).catch(() => setConfig(null))
     return () => { if (videoUrl) URL.revokeObjectURL(videoUrl) }
   }, [])
+
+  useEffect(() => {
+    if (!verifierOpen || !config) return
+    let active = true
+    setLedgerChecking(true)
+    setLedgerError('')
+    verifyGlobalEvidenceLedger(config)
+      .then(result => { if (active) setLedgerVerification(result) })
+      .catch(error => { if (active) setLedgerError(error instanceof Error ? error.message : 'Overlay verification failed') })
+      .finally(() => { if (active) setLedgerChecking(false) })
+    return () => { active = false }
+  }, [verifierOpen, config])
 
   const addEvent = (key: Exclude<TransactionKey, 'capture' | 'storage'>) => {
     setEvents(current => current.some(event => event.key === key) ? current : [...current, EVENT_BY_KEY[key]])
@@ -231,7 +247,7 @@ const App = () => {
     addEvent('expiry')
     setState('expired')
     setRole('Auditor')
-    setNotice('Access expired. Official hosting is retired and governed decryption authority is destroyed.')
+    setNotice('Companion no-hold record loaded. Its GlobalKVStore chain ends in EXPIRED; governed decryption authority is retired.')
   }
 
   const resetDemo = () => {
@@ -265,6 +281,9 @@ const App = () => {
   }
 
   const retentionPercent = state === 'expired' ? 100 : state === 'held' ? 38 : state === 'open' ? 76 : 24
+  const activeOutcome: EvidenceOutcome = state === 'expired' ? 'expired' : 'held'
+  const activeRecord = config?.stateProof.records[activeOutcome]
+  const transactionForEvent = (event: TransactionKey) => activeRecord?.history.find(item => item.value.event === event)?.txid ?? ''
 
   return (
     <div className="app-shell">
@@ -284,9 +303,9 @@ const App = () => {
       <main id="top">
         <section className="hero">
           <div className="hero-copy">
-            <div className="eyebrow"><span className="eyebrow-line" /> A working privacy model for public evidence</div>
-            <h1>Privacy without<br /><em>blind spots.</em></h1>
-            <p className="hero-lede">Body-camera footage stays encrypted. Courts authorize narrow access. BSV makes every lifecycle decision independently auditable.</p>
+            <div className="eyebrow"><span className="eyebrow-line" /> A civil-liberties architecture for public evidence</div>
+            <h1>Safer evidence.<br /><em>Stronger rights.</em></h1>
+            <p className="hero-lede">Body-camera footage stays encrypted. Courts authorize narrow access. GlobalKVStore turns every lifecycle decision into controller-signed, independently verifiable BSV state.</p>
             <div className="hero-actions">
               <a className="action-button primary" href="#demo"><PlayIcon /><span>Run the 90-second demo</span><ArrowIcon /></a>
               <button className="action-button secondary" onClick={() => setVerifierOpen(true)}><ChainIcon /><span>Inspect the proof</span></button>
@@ -294,7 +313,7 @@ const App = () => {
             <div className="hero-proof">
               <div><strong>AES-256</strong><span>encrypted before upload</span></div>
               <div><strong>UHRP</strong><span>content-addressed storage</span></div>
-              <div><strong>BSV</strong><span>tamper-evident audit trail</span></div>
+              <div><strong>BSV</strong><span>spend-linked evidence state</span></div>
             </div>
           </div>
           <div className="hero-visual" aria-label="Synthetic body camera evidence preview">
@@ -336,7 +355,7 @@ const App = () => {
               <div className="panel-header">
                 <div>
                   <span className="record-kicker">Evidence record</span>
-                  <h3>EV-2026-1042</h3>
+                  <h3>{activeRecord?.evidenceId ?? 'EV-2026-1042-A'}</h3>
                 </div>
                 <span className={`state-badge ${state}`}><i /> {stateLabel[state]}</span>
               </div>
@@ -383,12 +402,12 @@ const App = () => {
 
             <aside className="ledger-panel">
               <div className="panel-header ledger-heading">
-                <div><span className="record-kicker">Independent record</span><h3>BSV audit trail</h3></div>
+                <div><span className="record-kicker">Independent record</span><h3>GlobalKVStore state chain</h3></div>
                 <span className="live-dot"><i /> LIVE</span>
               </div>
               <div className="timeline">
                 {events.map((event, index) => {
-                  const txid = config?.transactions[event.key] ?? ''
+                  const txid = transactionForEvent(event.key)
                   return (
                     <div className="timeline-event" key={event.key}>
                       <span className="timeline-marker"><CheckIcon /></span>
@@ -405,7 +424,7 @@ const App = () => {
 
               <button className="verify-button" onClick={() => setVerifierOpen(true)}>
                 <FingerprintIcon />
-                <span><strong>Verify this record yourself</strong><small>Recompute hashes and inspect every BSV transaction</small></span>
+                <span><strong>Verify this record yourself</strong><small>Resolve the live overlay, signatures, and UTXO ancestry</small></span>
                 <ArrowIcon />
               </button>
             </aside>
@@ -417,7 +436,7 @@ const App = () => {
             <span className="section-number">02</span>
             <span className="eyebrow">Retention without trust</span>
             <h2>Seven days means<br /><em>seven days.</em></h2>
-            <p>The policy is committed at capture. Before expiry, an authorized evidence hold can renew availability. Without one, official UHRP hosting retires and decryption authority is destroyed.</p>
+            <p>The policy is committed at capture. Before expiry, an authorized evidence hold can renew availability. Without one, official UHRP hosting retires and decryption authority is destroyed. The demo publishes one independent record for each outcome, never two competing spends of one state.</p>
             <div className="honesty-note"><ShieldIcon /><span><strong>An honest security boundary.</strong> Blockchain proves the governed system’s actions. Key destruction makes retained ciphertext unusable; no network can prove a rogue third party kept no copy.</span></div>
           </div>
           <div className="retention-card">
@@ -426,7 +445,7 @@ const App = () => {
             <div className="retention-labels"><span>CAPTURED</span><span>7-DAY DEADLINE</span></div>
             <div className="policy-paths">
               <div className={state === 'held' ? 'selected' : ''}><span className="path-icon hold"><ScaleIcon /></span><div><strong>Legal hold arrives</strong><p>Signed authority spends the active evidence state into a renewed HELD state.</p></div><CheckIcon /></div>
-              <div className={state === 'expired' ? 'selected expired' : ''}><span className="path-icon expire"><ClockIcon /></span><div><strong>No hold arrives</strong><p>Hosting expires, key authority is retired, and the expiry receipt is anchored.</p></div><CheckIcon /></div>
+              <div className={state === 'expired' ? 'selected expired' : ''}><span className="path-icon expire"><ClockIcon /></span><div><strong>No hold arrives</strong><p>Hosting expires, key authority is retired, and the companion record advances to EXPIRED.</p></div><CheckIcon /></div>
             </div>
           </div>
         </section>
@@ -442,7 +461,7 @@ const App = () => {
             <div className="architecture-connector"><ArrowIcon /></div>
             <div className="architecture-card"><span><DatabaseIcon /></span><small>02 · UHRP</small><h3>Store by hash</h3><p>Only ciphertext is published. Content addressing detects modification and enables resilient resolution.</p><code>{shortHash(DEMO_EVIDENCE.ciphertextSha256, 12, 8)}</code></div>
             <div className="architecture-connector"><ArrowIcon /></div>
-            <div className="architecture-card"><span><ChainIcon /></span><small>03 · BSV</small><h3>Prove every decision</h3><p>Capture, authority, access, holds, and expiry form a public, tamper-evident lifecycle.</p><code>{events.length} lifecycle events</code></div>
+            <div className="architecture-card"><span><ChainIcon /></span><small>03 · GLOBAL KV</small><h3>Spend state forward</h3><p>Each controller-signed PushDrop token spends its predecessor, while the overlay retains the verifiable history.</p><code>{events.length} lifecycle states</code></div>
           </div>
         </section>
 
@@ -465,14 +484,15 @@ const App = () => {
             <span className="verifier-mark"><FingerprintIcon /></span>
             <span className="eyebrow">Public verifier</span>
             <h2 id="verifier-title">Trust the bytes, not the interface.</h2>
-            <p>These commitments let any investigator, defense attorney, court, or citizen detect changes to the official evidence record.</p>
+            <p>This browser queries the public GlobalKVStore overlay, reconstructs both UTXO histories, checks every allowed transition, pins the controller, and verifies each current PushDrop signature.</p>
             <div className="verification-list">
+              <div><span className={ledgerVerification ? '' : 'muted'}>{ledgerVerification ? <CheckIcon /> : <ClockIcon />}</span><section><small>GLOBALKVSTORE · LIVE OVERLAY</small><code>{ledgerChecking ? 'Resolving ls_kvstore…' : ledgerVerification ? `${ledgerVerification.records.held.historyLength} held states + ${ledgerVerification.records.expired.historyLength} expired states` : 'Awaiting live verification'}</code><p>{ledgerVerification ? `Verified controller ${shortHash(ledgerVerification.controller, 18, 12)} at ${new Date(ledgerVerification.checkedAt).toLocaleTimeString()}.` : ledgerError || 'The check runs directly from this browser when the verifier opens.'}</p></section></div>
               <div><span><CheckIcon /></span><section><small>CAPTURE COMMITMENT · SHA-256</small><code>{DEMO_EVIDENCE.plaintextSha256}</code><p>{verifiedPlaintextHash ? 'Recomputed from the decrypted video in this browser — match.' : 'Committed before encryption; recomputed whenever authorized footage opens.'}</p></section></div>
               <div><span><CheckIcon /></span><section><small>UHRP CIPHERTEXT · SHA-256</small><code>{DEMO_EVIDENCE.ciphertextSha256}</code><p>{verifiedCiphertextHash ? 'Recomputed from the resolved ciphertext in this browser — match.' : `${fileSize(DEMO_EVIDENCE.ciphertextBytes)} encrypted object · ${config?.uhrpHost ?? 'UHRP host'}`}</p></section></div>
               <div><span className={warrant ? '' : 'muted'}>{warrant ? <CheckIcon /> : <ClockIcon />}</span><section><small>COURT CREDENTIAL</small><code>{warrant ? shortHash(warrant.signatureBase64, 18, 12) : 'Run the guided scenario to issue'}</code><p>{warrant ? `${warrant.algorithm} signature issued to ${warrant.payload.grantee}.` : 'No order exists in this browser session yet.'}</p></section></div>
             </div>
             <div className="transaction-grid">
-              {events.map(event => <div key={event.key}><span>{event.title}</span><TxLink txid={config?.transactions[event.key] ?? ''} config={config} /></div>)}
+              {(activeRecord?.history ?? []).map(item => <div key={item.outpoint}><span>{item.value.sequence + 1}. {item.value.state.replaceAll('_', ' ')}</span><TxLink txid={item.txid} config={config} /></div>)}
             </div>
             <button className="action-button primary modal-action" onClick={() => setVerifierOpen(false)}><CheckIcon /><span>Verification complete</span></button>
           </section>

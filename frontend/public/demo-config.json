@@ -3,7 +3,257 @@
   "uhrpUrl": "XUToyhHVCKaERRmHFzndwL1hBKXWTATjbi4zCjVs6mv22X5Sjk5B",
   "uhrpHost": "https://nanostore.babbage.systems",
   "explorerBaseUrl": "https://whatsonchain.com/tx/",
-  "transactions": {
+  "stateProof": {
+    "kind": "GlobalKVStore",
+    "protocolID": [
+      1,
+      "bsv evidence gate"
+    ],
+    "topic": "tm_kvstore",
+    "service": "ls_kvstore",
+    "lookupHost": "https://backend.2b63ed8575c49054dd0ac65c61e7e6c6.projects.babbage.systems",
+    "trackerHost": "https://users.bapp.dev",
+    "controller": "0350fa50d7c23f63d949c9532f41a7ea0c01112ffb1404cfb8a9f732b11a54a1ce",
+    "records": {
+      "held": {
+        "evidenceId": "EV-2026-1042-A",
+        "outcome": "held",
+        "key": "BSVEG:EV-2026-1042-A:v1",
+        "currentOutpoint": "462e3378bf582e62ec2e91fd4bbc965a2741c3cfe6cce7d6a6985ac3fb569713.0",
+        "history": [
+          {
+            "outpoint": "ad9828beede789afec80468f2e0b4d483530637ffe3279f0ba418c0d6c16a8e2.0",
+            "txid": "ad9828beede789afec80468f2e0b4d483530637ffe3279f0ba418c0d6c16a8e2",
+            "value": {
+              "schema": "bsv-evidence-gate/1",
+              "plaintextSha256": "be97c2f15639b07cc2ff3b77eed8d362e4c456fcaa6de90e21e9497928e26015",
+              "ciphertextSha256": "78ca8c6da79e65381251461e9febae68208cc60fcd6c611233f3d38ea88b53f7",
+              "uhrpUrl": "XUToyhHVCKaERRmHFzndwL1hBKXWTATjbi4zCjVs6mv22X5Sjk5B",
+              "retentionDeadline": "2026-09-01T21:14:08.000Z",
+              "evidenceId": "EV-2026-1042-A",
+              "state": "CAPTURED",
+              "sequence": 0,
+              "event": "capture",
+              "actor": "CAM-12",
+              "occurredAt": "2026-08-25T21:14:08.000Z",
+              "previousState": null
+            }
+          },
+          {
+            "outpoint": "18a59be8bca11a5f19f6b8386d118519d780458a2aec64c80b98b58a809711a1.0",
+            "txid": "18a59be8bca11a5f19f6b8386d118519d780458a2aec64c80b98b58a809711a1",
+            "value": {
+              "schema": "bsv-evidence-gate/1",
+              "plaintextSha256": "be97c2f15639b07cc2ff3b77eed8d362e4c456fcaa6de90e21e9497928e26015",
+              "ciphertextSha256": "78ca8c6da79e65381251461e9febae68208cc60fcd6c611233f3d38ea88b53f7",
+              "uhrpUrl": "XUToyhHVCKaERRmHFzndwL1hBKXWTATjbi4zCjVs6mv22X5Sjk5B",
+              "retentionDeadline": "2026-09-01T21:14:08.000Z",
+              "evidenceId": "EV-2026-1042-A",
+              "state": "STORED",
+              "sequence": 1,
+              "event": "storage",
+              "actor": "Evidence service",
+              "occurredAt": "2026-08-25T21:14:12.000Z",
+              "previousState": "CAPTURED"
+            }
+          },
+          {
+            "outpoint": "63a5a37fdcd9a93632eeed8558d382170de577f9b20fb4b8c77707b997aedee9.0",
+            "txid": "63a5a37fdcd9a93632eeed8558d382170de577f9b20fb4b8c77707b997aedee9",
+            "value": {
+              "schema": "bsv-evidence-gate/1",
+              "plaintextSha256": "be97c2f15639b07cc2ff3b77eed8d362e4c456fcaa6de90e21e9497928e26015",
+              "ciphertextSha256": "78ca8c6da79e65381251461e9febae68208cc60fcd6c611233f3d38ea88b53f7",
+              "uhrpUrl": "XUToyhHVCKaERRmHFzndwL1hBKXWTATjbi4zCjVs6mv22X5Sjk5B",
+              "retentionDeadline": "2026-09-01T21:14:08.000Z",
+              "evidenceId": "EV-2026-1042-A",
+              "state": "ACCESS_REQUESTED",
+              "sequence": 2,
+              "event": "request",
+              "actor": "Officer Morgan",
+              "occurredAt": "2026-08-25T21:17:44.000Z",
+              "previousState": "STORED"
+            }
+          },
+          {
+            "outpoint": "ff5ccb7379947cc226c0254d14394386e09d6a6510e85f74b16164b3b7c0e07f.0",
+            "txid": "ff5ccb7379947cc226c0254d14394386e09d6a6510e85f74b16164b3b7c0e07f",
+            "value": {
+              "schema": "bsv-evidence-gate/1",
+              "plaintextSha256": "be97c2f15639b07cc2ff3b77eed8d362e4c456fcaa6de90e21e9497928e26015",
+              "ciphertextSha256": "78ca8c6da79e65381251461e9febae68208cc60fcd6c611233f3d38ea88b53f7",
+              "uhrpUrl": "XUToyhHVCKaERRmHFzndwL1hBKXWTATjbi4zCjVs6mv22X5Sjk5B",
+              "retentionDeadline": "2026-09-01T21:14:08.000Z",
+              "evidenceId": "EV-2026-1042-A",
+              "state": "AUTHORIZED",
+              "sequence": 3,
+              "event": "warrant",
+              "actor": "Judge Rivera",
+              "occurredAt": "2026-08-25T21:18:06.000Z",
+              "previousState": "ACCESS_REQUESTED",
+              "authority": "Franklin County Digital Court · Case 26-481 · 30-minute window"
+            }
+          },
+          {
+            "outpoint": "299c63ca278dcd05c57c4658b1a87727ccf032ab6090339ffbda858c431e5a38.0",
+            "txid": "299c63ca278dcd05c57c4658b1a87727ccf032ab6090339ffbda858c431e5a38",
+            "value": {
+              "schema": "bsv-evidence-gate/1",
+              "plaintextSha256": "be97c2f15639b07cc2ff3b77eed8d362e4c456fcaa6de90e21e9497928e26015",
+              "ciphertextSha256": "78ca8c6da79e65381251461e9febae68208cc60fcd6c611233f3d38ea88b53f7",
+              "uhrpUrl": "XUToyhHVCKaERRmHFzndwL1hBKXWTATjbi4zCjVs6mv22X5Sjk5B",
+              "retentionDeadline": "2026-09-01T21:14:08.000Z",
+              "evidenceId": "EV-2026-1042-A",
+              "state": "VIEWED",
+              "sequence": 4,
+              "event": "view",
+              "actor": "Prosecutor Elena Park",
+              "occurredAt": "2026-08-25T21:19:31.000Z",
+              "previousState": "AUTHORIZED"
+            }
+          },
+          {
+            "outpoint": "462e3378bf582e62ec2e91fd4bbc965a2741c3cfe6cce7d6a6985ac3fb569713.0",
+            "txid": "462e3378bf582e62ec2e91fd4bbc965a2741c3cfe6cce7d6a6985ac3fb569713",
+            "value": {
+              "schema": "bsv-evidence-gate/1",
+              "plaintextSha256": "be97c2f15639b07cc2ff3b77eed8d362e4c456fcaa6de90e21e9497928e26015",
+              "ciphertextSha256": "78ca8c6da79e65381251461e9febae68208cc60fcd6c611233f3d38ea88b53f7",
+              "uhrpUrl": "XUToyhHVCKaERRmHFzndwL1hBKXWTATjbi4zCjVs6mv22X5Sjk5B",
+              "retentionDeadline": "2026-09-01T21:14:08.000Z",
+              "evidenceId": "EV-2026-1042-A",
+              "state": "HELD",
+              "sequence": 5,
+              "event": "hold",
+              "actor": "Prosecutor Elena Park",
+              "occurredAt": "2026-08-25T21:20:02.000Z",
+              "previousState": "VIEWED",
+              "authority": "Case 26-481 preservation order"
+            }
+          }
+        ]
+      },
+      "expired": {
+        "evidenceId": "EV-2026-1042-B",
+        "outcome": "expired",
+        "key": "BSVEG:EV-2026-1042-B:v1",
+        "currentOutpoint": "f03ca4804ad2cf424839d7c2176643c70baee0dcfcca5f5febb6f189848459ef.0",
+        "history": [
+          {
+            "outpoint": "c7d84a78f24f1058c0fa0316583e3c691198f123d59731406a5d13e3d0daa2a6.0",
+            "txid": "c7d84a78f24f1058c0fa0316583e3c691198f123d59731406a5d13e3d0daa2a6",
+            "value": {
+              "schema": "bsv-evidence-gate/1",
+              "plaintextSha256": "be97c2f15639b07cc2ff3b77eed8d362e4c456fcaa6de90e21e9497928e26015",
+              "ciphertextSha256": "78ca8c6da79e65381251461e9febae68208cc60fcd6c611233f3d38ea88b53f7",
+              "uhrpUrl": "XUToyhHVCKaERRmHFzndwL1hBKXWTATjbi4zCjVs6mv22X5Sjk5B",
+              "retentionDeadline": "2026-09-01T21:14:08.000Z",
+              "evidenceId": "EV-2026-1042-B",
+              "state": "CAPTURED",
+              "sequence": 0,
+              "event": "capture",
+              "actor": "CAM-12",
+              "occurredAt": "2026-08-25T21:14:08.000Z",
+              "previousState": null
+            }
+          },
+          {
+            "outpoint": "cb5193551f229ae164ad8077fd73155f9b093e65dbc25ca48fb81dcddfc38514.0",
+            "txid": "cb5193551f229ae164ad8077fd73155f9b093e65dbc25ca48fb81dcddfc38514",
+            "value": {
+              "schema": "bsv-evidence-gate/1",
+              "plaintextSha256": "be97c2f15639b07cc2ff3b77eed8d362e4c456fcaa6de90e21e9497928e26015",
+              "ciphertextSha256": "78ca8c6da79e65381251461e9febae68208cc60fcd6c611233f3d38ea88b53f7",
+              "uhrpUrl": "XUToyhHVCKaERRmHFzndwL1hBKXWTATjbi4zCjVs6mv22X5Sjk5B",
+              "retentionDeadline": "2026-09-01T21:14:08.000Z",
+              "evidenceId": "EV-2026-1042-B",
+              "state": "STORED",
+              "sequence": 1,
+              "event": "storage",
+              "actor": "Evidence service",
+              "occurredAt": "2026-08-25T21:14:12.000Z",
+              "previousState": "CAPTURED"
+            }
+          },
+          {
+            "outpoint": "3d6a886adb1d9f5315a5b87a4638bb6c9eb5e55eff72bbadaa28993ee4606e4c.0",
+            "txid": "3d6a886adb1d9f5315a5b87a4638bb6c9eb5e55eff72bbadaa28993ee4606e4c",
+            "value": {
+              "schema": "bsv-evidence-gate/1",
+              "plaintextSha256": "be97c2f15639b07cc2ff3b77eed8d362e4c456fcaa6de90e21e9497928e26015",
+              "ciphertextSha256": "78ca8c6da79e65381251461e9febae68208cc60fcd6c611233f3d38ea88b53f7",
+              "uhrpUrl": "XUToyhHVCKaERRmHFzndwL1hBKXWTATjbi4zCjVs6mv22X5Sjk5B",
+              "retentionDeadline": "2026-09-01T21:14:08.000Z",
+              "evidenceId": "EV-2026-1042-B",
+              "state": "ACCESS_REQUESTED",
+              "sequence": 2,
+              "event": "request",
+              "actor": "Officer Morgan",
+              "occurredAt": "2026-08-25T21:17:44.000Z",
+              "previousState": "STORED"
+            }
+          },
+          {
+            "outpoint": "0c7f28e02ed506cced4511e01d3770de723142cd9213985f2217e964e5f4c831.0",
+            "txid": "0c7f28e02ed506cced4511e01d3770de723142cd9213985f2217e964e5f4c831",
+            "value": {
+              "schema": "bsv-evidence-gate/1",
+              "plaintextSha256": "be97c2f15639b07cc2ff3b77eed8d362e4c456fcaa6de90e21e9497928e26015",
+              "ciphertextSha256": "78ca8c6da79e65381251461e9febae68208cc60fcd6c611233f3d38ea88b53f7",
+              "uhrpUrl": "XUToyhHVCKaERRmHFzndwL1hBKXWTATjbi4zCjVs6mv22X5Sjk5B",
+              "retentionDeadline": "2026-09-01T21:14:08.000Z",
+              "evidenceId": "EV-2026-1042-B",
+              "state": "AUTHORIZED",
+              "sequence": 3,
+              "event": "warrant",
+              "actor": "Judge Rivera",
+              "occurredAt": "2026-08-25T21:18:06.000Z",
+              "previousState": "ACCESS_REQUESTED",
+              "authority": "Franklin County Digital Court · Case 26-481 · 30-minute window"
+            }
+          },
+          {
+            "outpoint": "4eb11b6606a5197285b0b9fb2687700a6025f02eb48c5bb3f49d8d88c59033f2.0",
+            "txid": "4eb11b6606a5197285b0b9fb2687700a6025f02eb48c5bb3f49d8d88c59033f2",
+            "value": {
+              "schema": "bsv-evidence-gate/1",
+              "plaintextSha256": "be97c2f15639b07cc2ff3b77eed8d362e4c456fcaa6de90e21e9497928e26015",
+              "ciphertextSha256": "78ca8c6da79e65381251461e9febae68208cc60fcd6c611233f3d38ea88b53f7",
+              "uhrpUrl": "XUToyhHVCKaERRmHFzndwL1hBKXWTATjbi4zCjVs6mv22X5Sjk5B",
+              "retentionDeadline": "2026-09-01T21:14:08.000Z",
+              "evidenceId": "EV-2026-1042-B",
+              "state": "VIEWED",
+              "sequence": 4,
+              "event": "view",
+              "actor": "Prosecutor Elena Park",
+              "occurredAt": "2026-08-25T21:19:31.000Z",
+              "previousState": "AUTHORIZED"
+            }
+          },
+          {
+            "outpoint": "f03ca4804ad2cf424839d7c2176643c70baee0dcfcca5f5febb6f189848459ef.0",
+            "txid": "f03ca4804ad2cf424839d7c2176643c70baee0dcfcca5f5febb6f189848459ef",
+            "value": {
+              "schema": "bsv-evidence-gate/1",
+              "plaintextSha256": "be97c2f15639b07cc2ff3b77eed8d362e4c456fcaa6de90e21e9497928e26015",
+              "ciphertextSha256": "78ca8c6da79e65381251461e9febae68208cc60fcd6c611233f3d38ea88b53f7",
+              "uhrpUrl": "XUToyhHVCKaERRmHFzndwL1hBKXWTATjbi4zCjVs6mv22X5Sjk5B",
+              "retentionDeadline": "2026-09-01T21:14:08.000Z",
+              "evidenceId": "EV-2026-1042-B",
+              "state": "EXPIRED",
+              "sequence": 5,
+              "event": "expiry",
+              "actor": "Retention service",
+              "occurredAt": "2026-09-01T21:14:08.000Z",
+              "previousState": "VIEWED",
+              "authority": "Retention policy completed; governed key retired"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "legacyReceipts": {
     "capture": "ab70d9ba04ffcac39b55ae02233e089245e7869c53c48a1acf3248d2a5ae4d49",
     "storage": "cbd7405ac0f56588cbad8071b744a1dfcf324d435a5393e8eed1963316d1b487",
     "request": "7450883840899be28efa2cabaf2e20fd64f689a342c704c51e59206269f6a680",

@@ -12,7 +12,9 @@
     "verify": "npm run encrypt:evidence && npm run test && npm run build:frontend",
     "uhrp:estimate": "node scripts/publish-uhrp.mjs --estimate",
     "uhrp:publish": "node scripts/publish-uhrp.mjs --publish --update-config",
-    "anchor:demo": "node scripts/anchor-demo.mjs",
+    "state:plan": "node scripts/publish-global-state.mjs --plan",
+    "state:publish": "node scripts/publish-global-state.mjs --publish",
+    "anchor:legacy": "node scripts/anchor-demo.mjs",
     "cars:build": "cars build Production",
     "cars:deploy": "cars release now Production"
   },
