@@ -19,7 +19,7 @@
     "cars:deploy": "cars release now Production"
   },
   "dependencies": {
-    "@bsv/sdk": "^2.4.1"
+    "@bsv/sdk": "^2.5.0"
   },
   "devDependencies": {
     "@p2ppsr/cars-cli": "^1.2.32",
