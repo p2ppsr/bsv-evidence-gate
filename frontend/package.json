@@ -12,7 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@bsv/sdk": "^2.4.1",
+    "@bsv/sdk": "^2.5.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
